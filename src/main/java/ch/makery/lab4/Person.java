@@ -18,16 +18,16 @@ public class Person {
     private final StringProperty dicipline_type;
 
     public Person(){
-        this(null, null);
+        this(null, null, null, 0, null, null, null);
     }
-    public Person(String firstName, String lastName){
+    public Person(String firstName, String lastName, String science_rank, Integer science_mark, String rank, String dicipline_name, String dicipline_type){
         this.firstName = new SimpleStringProperty(firstName);
         this.lastName = new SimpleStringProperty(lastName);
-        this.science_rank = new SimpleStringProperty("Профессор");
-        this.science_mark = new SimpleIntegerProperty(2);
-        this.rank = new SimpleStringProperty("Преподаватель");
-        this.dicipline_name = new SimpleStringProperty("Проектирование баз данных");
-        this.dicipline_type = new SimpleStringProperty("Лабораторные");
+        this.science_rank = new SimpleStringProperty(science_rank);
+        this.science_mark = new SimpleIntegerProperty(science_mark);
+        this.rank = new SimpleStringProperty(rank);
+        this.dicipline_name = new SimpleStringProperty(dicipline_name);
+        this.dicipline_type = new SimpleStringProperty(dicipline_type);
     }
 
     public String getFirstName() {
