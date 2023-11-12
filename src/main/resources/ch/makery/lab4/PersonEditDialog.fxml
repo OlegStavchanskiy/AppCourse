@@ -88,5 +88,6 @@
             <Button mnemonicParsing="false" onAction="#handleCancel" text="Cancel" />
         </buttons>
       </ButtonBar>
+      <HBox prefHeight="100.0" prefWidth="200.0" />
    </children>
 </AnchorPane>
