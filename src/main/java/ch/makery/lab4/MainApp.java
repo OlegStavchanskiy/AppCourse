@@ -1,17 +1,25 @@
 package ch.makery.lab4;
 
+import java.io.File;
 import java.io.IOException;
-
+import java.util.prefs.Preferences;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import java.io.StringWriter;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Unmarshaller;
 
 public class MainApp extends Application {
     private ObservableList<Person> personData = FXCollections.observableArrayList();
@@ -48,15 +56,27 @@ public class MainApp extends Application {
         try {
             // Загружаем корневой макет из fxml файла.
             FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(MainApp.class.getResource("RootLayout.fxml"));
+            loader.setLocation(MainApp.class
+                    .getResource("RootLayout.fxml"));
             rootLayout = (BorderPane) loader.load();
 
             // Отображаем сцену, содержащую корневой макет.
             Scene scene = new Scene(rootLayout);
             primaryStage.setScene(scene);
+
+            // Даём контроллеру доступ к главному прилодению.
+            RootLayoutController controller = loader.getController();
+            controller.setMainApp(this);
+
             primaryStage.show();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+
+        // Пытается загрузить последний открытый файл с адресатами.
+        File file = getPersonFilePath();
+        if (file != null) {
+            loadPersonDataFromFile(file);
         }
     }
 
@@ -130,6 +150,79 @@ public class MainApp extends Application {
         } catch (IOException e) {
             e.printStackTrace();
             return false;
+        }
+    }
+    public File getPersonFilePath() {
+        Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+        String filePath = prefs.get("filePath", null);
+        if (filePath != null) {
+            return new File(filePath);
+        } else {
+            return null;
+        }
+    }
+
+    public void setPersonFilePath(File file) {
+        Preferences prefs = Preferences.userNodeForPackage(MainApp.class);
+        if (file != null) {
+            prefs.put("filePath", file.getPath());
+
+            // Обновление заглавия сцены.
+            primaryStage.setTitle("AddressApp - " + file.getName());
+        } else {
+            prefs.remove("filePath");
+
+            // Обновление заглавия сцены.
+            primaryStage.setTitle("AddressApp");
+        }
+    }
+    public void loadPersonDataFromFile(File file) {
+        try {
+            JAXBContext context = JAXBContext
+                    .newInstance(PersonListWrapper.class);
+            Unmarshaller um = context.createUnmarshaller();
+
+            // Чтение XML из файла и демаршализация.
+            PersonListWrapper wrapper = (PersonListWrapper) um.unmarshal(file);
+
+            personData.clear();
+            personData.addAll(wrapper.getPersons());
+
+            // Сохраняем путь к файлу в реестре.
+            setPersonFilePath(file);
+
+        } catch (Exception e) { // catches ANY exception
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Error");
+            alert.setHeaderText("Could not load data");
+            alert.setContentText("Could not load data from file:\n" + file.getPath());
+
+            alert.showAndWait();
+        }
+    }
+    public void savePersonDataToFile(File file) {
+        try {
+            JAXBContext context = JAXBContext
+                    .newInstance(PersonListWrapper.class);
+            Marshaller m = context.createMarshaller();
+            m.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+
+            // Обёртываем наши данные об адресатах.
+            PersonListWrapper wrapper = new PersonListWrapper();
+            wrapper.setPersons(personData);
+
+            // Маршаллируем и сохраняем XML в файл.
+            m.marshal(wrapper, file);
+
+            // Сохраняем путь к файлу в реестре.
+            setPersonFilePath(file);
+        } catch (JAXBException e) {
+            e.printStackTrace(); // Логгируем исключение для дальнейшего анализа
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Error");
+            alert.setHeaderText("Could not save data");
+            alert.setContentText("Could not save data to file:\n" + file.getPath() + "\n\nError details: " + e.getMessage());
+            alert.showAndWait();
         }
     }
 }
